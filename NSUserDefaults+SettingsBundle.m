@@ -13,24 +13,38 @@
  */
 
 - (void)registerDefaultsFromSettingsBundle {
+  [self registerDefaults:[self defaultsFromPlistNamed:@"Root"]];
+}
+
+- (NSDictionary *)defaultsFromPlistNamed:(NSString *)plistName {
   NSString *settingsBundle = [[NSBundle mainBundle] pathForResource:@"Settings" ofType:@"bundle"];
-  if(!settingsBundle) {
-    NSLog(@"Could not find Settings.bundle");
-    return;
-  }
+  NSAssert(settingsBundle, @"Could not find Settings.bundle while loading defaults.");
   
-  NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:[settingsBundle stringByAppendingPathComponent:@"Root.plist"]];
+  NSString *plistFullName = [NSString stringWithFormat:@"%@.plist", plistName];
+  
+  NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:[settingsBundle stringByAppendingPathComponent:plistFullName]];
+  NSAssert1(settings, @"Could not load plist '%@' while loading defaults.", plistFullName);
+  
   NSArray *preferences = [settings objectForKey:@"PreferenceSpecifiers"];
+  NSAssert1(preferences, @"Could not find preferences entry in plist '%@' while loading defaults.", plistFullName);
   
-  NSMutableDictionary *defaultsToRegister = [[NSMutableDictionary alloc] initWithCapacity:[preferences count]];
+  NSMutableDictionary *defaults = [NSMutableDictionary dictionary];
   for(NSDictionary *prefSpecification in preferences) {
     NSString *key = [prefSpecification objectForKey:@"Key"];
-    if(key && [[prefSpecification allKeys] containsObject:@"DefaultValue"]) {
-      [defaultsToRegister setObject:[prefSpecification objectForKey:@"DefaultValue"] forKey:key];
+    id value = [prefSpecification objectForKey:@"DefaultValue"];
+    if(key && value) {
+      [defaults setObject:value forKey:key];
+    }
+    
+    NSString *type = [prefSpecification objectForKey:@"Type"];
+    if ([type isEqualToString:@"PSChildPaneSpecifier"]) {
+      NSString *file = [prefSpecification objectForKey:@"File"];
+      NSAssert1(file, @"Unable to get child plist name from plist '%@'", plistFullName);
+      [defaults addEntriesFromDictionary:[self defaultsFromPlistNamed:file]];
     }
   }
   
-  [self registerDefaults:defaultsToRegister];
+  return defaults;
 }
 
 @end

@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = 'NSUserDefaults+SettingsBundle'
-  spec.version      = '0.0.1'
+  spec.version      = '0.0.2'
   spec.license      = { :type => 'MIT' }
   spec.homepage     = "https://github.com/dommmel/NSUserDefaults-SettingsBundle"
   spec.authors      = { "Dominik Heier" => "dommmel@gmail.com" }
